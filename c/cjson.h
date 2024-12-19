@@ -3,8 +3,8 @@
 *
 * A lite json lib Definition header
 *
-* AUTHOR	:	Sean Feng <SeanFeng2006@hotmail.com>
-* DATE		:	Nov. 7, 2024
+* AUTHOR    :    Sean Feng <SeanFeng2006@hotmail.com>
+* DATE      :    Nov. 7, 2024
 * Copyright (c) 2024-?. All Rights Reserved.
 *
 * This code may be used in compiled form in any way you desire. This
@@ -29,138 +29,118 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <jemalloc/jemalloc.h>
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-#define _T(x)					x
+#define _T(x)                   x
 
-typedef char					tchar_t;
-//typedef long long				int64_t;
-//typedef unsigned long long	uint64_t;
+typedef char                    tchar_t;
 
 /********************************************************************
 *        Macros
 *********************************************************************/
-#define CJSON_KEY_BUF_LEN				32 // bytes
+#define CJSON_KEY_BUF_LEN               32 // bytes
 
-#define CJSON_KEY_LEN_MAX				(CJSON_KEY_BUF_LEN - 2 - 1) // 2 of quotation mark & 1 of \0
+#define CJSON_KEY_LEN_MAX               (CJSON_KEY_BUF_LEN - 2 - 1) // 2 of quotation mark & 1 of \0
 
-#define _token_stack_buf_size_			64 // tchars
+#define _token_stack_buf_size_          64 // tchars
 
-#define my_malloc(s)					malloc((s))
-#define my_free(p)						free((p))
-
-//==================================================================
+#if defined(JEMALLOC_NO_DEMANGLE)
+#define my_malloc(s)                    je_malloc((s))
+#define my_free(p)                      je_free((p))
+#else
+#define my_malloc(s)                    malloc((s))
+#define my_free(p)                      free((p))
+#endif
 
 /********************************************************************
 *        Data Types 
 *********************************************************************/
-/*
-string: "some-value"
-number: 123456 / 1234.56
-boolean: true / false
-array: [element1, .. elementN]
-object: {}
-null
-*/
+typedef struct {}               *position_t;
 
-/*
-{
-	"name": "John Doe",
-	"age": 30,
-	"is_active": true,
-	"hobbies": ["reading", "music", "sports"],
-	"address": {
-		"street": "123 Main St",
-		"city": "New York",
-		"zip": null
-	}
-}
-*/
-
-typedef struct {}				*position_t;
-
-typedef tchar_t					cjson_key_t[CJSON_KEY_BUF_LEN];
-typedef struct _cjson_array_t	cjson_array_t;
-typedef struct _cjson_kv_t		cjson_kv_t;
-typedef struct _cjson_object_t	cjson_object_t;
-typedef struct _cjson_t			cjson_t;
+typedef tchar_t                 cjson_key_t[CJSON_KEY_BUF_LEN];
+typedef struct _cjson_array_t   cjson_array_t;
+typedef struct _cjson_kv_t      cjson_kv_t;
+typedef struct _cjson_object_t  cjson_object_t;
+typedef struct _cjson_t         cjson_t;
 
 // number value types
 enum _cjson_valuetype_e {
-	_cjson_value_unknown_ = 0,
-	_cjson_value_null_,
-	_cjson_value_string_,
-	_cjson_value_number_,
-	_cjson_value_bool_,
-	_cjson_value_array_,
-	_cjson_value_object_,
+    _cjson_value_unknown_ = 0,
+    _cjson_value_null_,
+    _cjson_value_string_,
+    _cjson_value_number_,
+    _cjson_value_bool_,
+    _cjson_value_array_,
+    _cjson_value_object_,
 
-	_cjson_value_end_
+    _cjson_value_end_
 };
-typedef enum _cjson_valuetype_e	cjson_valuetype_e;
+typedef enum _cjson_valuetype_e         cjson_valuetype_e;
 
 // string
 struct _cjson_string_t {
-	unsigned short	capacity;
-	unsigned short	len;
-	tchar_t			s[0];
+    unsigned short      capacity;
+    unsigned short      len;
+    tchar_t             s[0];
 };
-typedef struct _cjson_string_t	cjson_string_t;
+typedef struct _cjson_string_t          cjson_string_t;
 
 // number type
 struct _cjson_number_t {
-	int64_t			number; // 1234567890
-	int64_t			divisor; // divisor == 1000,  ==> 1234567.890
+    int64_t             number;  // 1234567890
+    int64_t             divisor; // divisor == 1000, ==> 1234567.890
 };
-typedef struct _cjson_number_t	cjson_number_t;
+typedef struct _cjson_number_t          cjson_number_t;
 
 // value
 struct _cjson_value_t {
-	struct _cjson_value_t	*next;
-	// value
-	union {
-		int					boolval; // boolean value
-		cjson_string_t		*strval; // string value
-		cjson_number_t		*numval; // number value
-		cjson_array_t		*arrval; // array value
-		cjson_object_t		*objval; // object value
-		void				*_valptr; // for common data type use
-	} __value;
-	cjson_valuetype_e		value_type;
+    struct _cjson_value_t   *next;
+    // value
+    union {
+        int                 boolval;  // boolean value
+        cjson_string_t      *strval;  // string value
+        cjson_number_t      *numval;  // number value
+        cjson_array_t       *arrval;  // array value
+        cjson_object_t      *objval;  // object value
+        void                *_valptr; // for common data type use
+    } __value;
+    cjson_valuetype_e       value_type;
 
-#define cjson_boolval		__value.boolval
-#define cjson_strval		__value.strval
-#define cjson_numval		__value.numval
-#define cjson_arrval		__value.arrval
-#define cjson_objval		__value.objval
-#define cjson_valptr		__value._valptr
+#define cjson_boolval       __value.boolval
+#define cjson_strval        __value.strval
+#define cjson_numval        __value.numval
+#define cjson_arrval        __value.arrval
+#define cjson_objval        __value.objval
+#define cjson_valptr        __value._valptr
 };
-typedef struct _cjson_value_t	cjson_value_t;
+typedef struct _cjson_value_t           cjson_value_t;
 
 // array
 struct _cjson_array_t {
-	cjson_value_t			*elem;
-	int						count;
-	cjson_valuetype_e		value_type;
+    cjson_value_t           *elem;
+    int                     count;
+    cjson_valuetype_e       value_type;
 };
 
 // key - value
 struct _cjson_kv_t {
-	cjson_string_t		*key;
-	cjson_value_t		value;
-	struct _cjson_kv_t	*next;
+    cjson_string_t          *key;
+    cjson_value_t           value;
+    struct _cjson_kv_t      *next;
 };
 
 // object
 struct _cjson_object_t {
-	cjson_kv_t			*kvs;
-	int					count;
+    cjson_kv_t              *kvs;
+    int                     count;
 };
 
 struct _cjson_t {
-	cjson_object_t		*object;
+    cjson_object_t          *object;
 };
 
 /********************************************************************
