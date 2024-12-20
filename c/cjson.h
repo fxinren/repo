@@ -29,7 +29,9 @@
 #include <string.h>
 #include <ctype.h>
 
+#if defined(JEMALLOC_NO_DEMANGLE)
 #include <jemalloc/jemalloc.h>
+#endif
 
 #if defined(__cplusplus)
 extern "C" {
