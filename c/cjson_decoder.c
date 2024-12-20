@@ -375,6 +375,31 @@ static const _pfn_cjson_decoder_t _token_handlers[] = {
     _decode_value_null      // 10, null/NULL
 };
 
+static int __str_cpy(tchar_t *dest, const tchar_t *src, int len)
+{
+    int i = 0;
+    int round = 0;
+    int remain = 0;
+    uint32_t *_src = NULL;
+    uint32_t *_dest = NULL;
+
+    round = len / sizeof(uint32_t);
+    remain = len % sizeof(uint32_t);
+
+    _src = (uint32_t*)src;
+    _dest = (uint32_t*)dest;
+
+    for (i = 0; i < round; i++) {
+        _dest[i] = _src[i];
+    }
+
+    for (i = 0; i < remain; i++) {
+        dest[round * sizeof(uint32_t) + i] = src[round * sizeof(uint32_t) + i];
+    }
+
+    return i;
+}
+
 static int _decode_string(const tchar_t *json_text, cjson_value_t *in_value, cjson_value_t *out_value, decode_context_t *ctx)
 {
     //===========================================
@@ -383,7 +408,6 @@ static int _decode_string(const tchar_t *json_text, cjson_value_t *in_value, cjs
     //===========================================
     int ret = 0;
     int i = 0;
-    int _buf_size_ = CJSON_KEY_BUF_LEN;
 
     // '"' has been pushed into stack before,
     // so, it's the second " that we met,
@@ -407,14 +431,7 @@ static int _decode_string(const tchar_t *json_text, cjson_value_t *in_value, cjs
         i++;
     }
 
-    out_value->value_type = _cjson_value_string_;
-    out_value->cjson_strval = (cjson_string_t*)my_malloc(sizeof(cjson_string_t) + _buf_size_);
-    if (out_value->cjson_strval == NULL) {
-        return -1;
-    }
-    out_value->cjson_strval->capacity = _buf_size_;
-    out_value->cjson_strval->len = 0;
-
+    // to test the string length
     while (json_text[i]) {
         //printf("[%d]%c\n", i, json_text[i]);
         if (json_text[i] == _T('\\') || json_text[i] == _T('"')) {
@@ -432,12 +449,24 @@ static int _decode_string(const tchar_t *json_text, cjson_value_t *in_value, cjs
         }
 
         // just copy the character
-        out_value->cjson_strval->s[out_value->cjson_strval->len] = json_text[i];
-        out_value->cjson_strval->len++;
+        //out_value->cjson_strval->s[out_value->cjson_strval->len] = json_text[i];
+        //out_value->cjson_strval->len++;
         i++;
     }
 
-    out_value->cjson_strval->s[out_value->cjson_strval->len] = 0;
+    // string copy
+    // buffer length is i == capacity
+    // string length is i - 1
+    out_value->value_type = _cjson_value_string_;
+    out_value->cjson_strval = (cjson_string_t*)my_malloc(sizeof(cjson_string_t) + (i * sizeof(tchar_t)));
+    if (out_value->cjson_strval == NULL) {
+        return -1;
+    }
+    out_value->cjson_strval->capacity = i;
+    out_value->cjson_strval->len = i - 1;
+    out_value->cjson_strval->s[out_value->cjson_strval->capacity] = 0;
+
+    __str_cpy(out_value->cjson_strval->s, json_text + 1, out_value->cjson_strval->len); // (json_text + 1) to skip the first '"'
     //printf("%s\n", out_value->cjson_strval);
     return i + 1;
 
@@ -457,8 +486,11 @@ static int _decode_escape(const tchar_t *json_text,cjson_value_t *in_value, cjso
     //printf("=== _decode_escape\n");
 
     while (i < 2) { // \b
-        out_value->cjson_strval->s[out_value->cjson_strval->len] = json_text[i];
-        out_value->cjson_strval->len++;
+        if (json_text[i] == 0) {
+            return -1;
+        }
+        //out_value->cjson_strval->s[out_value->cjson_strval->len] = json_text[i];
+        //out_value->cjson_strval->len++;
         i++;
     }
 
