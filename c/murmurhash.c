@@ -15,10 +15,12 @@ typedef struct {
 #if !defined(_big_endian_)
 
 // MurmurHash3 32-bit implementation
-uint32_t murmurhash3_32(const void *key, size_t len, uint32_t seed) {
+uint32_t murmurhash3_32(const void *key, size_t len, uint32_t seed)
+{
     const uint8_t *data = (const uint8_t *)key; // Cast input data to bytes
     const size_t nblocks = len / 4; // Number of 4-byte blocks
 
+    size_t i = 0;
     uint32_t h1 = seed; // Initialize hash state
 
     // Constants for mixing
@@ -27,7 +29,7 @@ uint32_t murmurhash3_32(const void *key, size_t len, uint32_t seed) {
 
     // Process each 4-byte block
     const uint32_t *blocks = (const uint32_t *)(data + nblocks * 4);
-    for (size_t i = -nblocks; i; i++) {
+    for (i = -nblocks; i; i++) {
         uint32_t k1 = blocks[i]; // Read a 4-byte block
 
         // Mix the block
@@ -70,10 +72,12 @@ uint32_t murmurhash3_32(const void *key, size_t len, uint32_t seed) {
 }
 
 // MurmurHash3 128-bit implementation
-void murmurhash3_128(const void *key, size_t len, uint32_t seed, uint128_t *out) {
+void murmurhash3_128(const void *key, size_t len, uint32_t seed, uint128_t *out)
+{
     const uint8_t *data = (const uint8_t *)key; // Cast input data to bytes
     const size_t nblocks = len / 16; // Number of 16-byte blocks
 
+    size_t i = 0;
     uint64_t h1 = seed; // Initialize hash state
     uint64_t h2 = seed;
 
@@ -83,7 +87,7 @@ void murmurhash3_128(const void *key, size_t len, uint32_t seed, uint128_t *out)
 
     // Process each 16-byte block
     const uint64_t *blocks = (const uint64_t *)(data);
-    for (size_t i = 0; i < nblocks; i++) {
+    for (i = 0; i < nblocks; i++) {
         uint64_t k1 = blocks[i * 2]; // Read first 64 bits of the block
         uint64_t k2 = blocks[i * 2 + 1]; // Read next 64 bits of the block
 
@@ -206,10 +210,12 @@ uint64_t big_endian_to_host64(uint64_t value) {
 }
 
 // MurmurHash3 32-bit implementation (supports big-endian)
-uint32_t murmurhash3_32(const void *key, size_t len, uint32_t seed) {
+uint32_t murmurhash3_32(const void *key, size_t len, uint32_t seed)
+{
     const uint8_t *data = (const uint8_t *)key; // Cast input data to bytes
     const size_t nblocks = len / 4; // Number of 4-byte blocks
 
+    size_t i = 0;
     uint32_t h1 = seed; // Initialize hash state
 
     // Constants for mixing
@@ -218,7 +224,7 @@ uint32_t murmurhash3_32(const void *key, size_t len, uint32_t seed) {
 
     // Process each 4-byte block
     const uint32_t *blocks = (const uint32_t *)(data + nblocks * 4);
-    for (size_t i = -nblocks; i; i++) {
+    for (i = -nblocks; i; i++) {
         uint32_t k1 = blocks[i]; // Read a 4-byte block
 
         // Convert big-endian to host byte order
@@ -264,10 +270,12 @@ uint32_t murmurhash3_32(const void *key, size_t len, uint32_t seed) {
 }
 
 // MurmurHash3 128-bit implementation (supports big-endian)
-void murmurhash3_128(const void *key, size_t len, uint32_t seed, uint128_t *out) {
+void murmurhash3_128(const void *key, size_t len, uint32_t seed, uint128_t *out)
+{
     const uint8_t *data = (const uint8_t *)key; // Cast input data to bytes
     const size_t nblocks = len / 16; // Number of 16-byte blocks
 
+    size_t i = 0;
     uint64_t h1 = seed; // Initialize hash state
     uint64_t h2 = seed;
 
@@ -277,7 +285,7 @@ void murmurhash3_128(const void *key, size_t len, uint32_t seed, uint128_t *out)
 
     // Process each 16-byte block
     const uint64_t *blocks = (const uint64_t *)(data);
-    for (size_t i = 0; i < nblocks; i++) {
+    for (i = 0; i < nblocks; i++) {
         uint64_t k1 = blocks[i * 2]; // Read first 64 bits of the block
         uint64_t k2 = blocks[i * 2 + 1]; // Read next 64 bits of the block
 
@@ -383,7 +391,8 @@ void murmurhash3_128(const void *key, size_t len, uint32_t seed, uint128_t *out)
 }
 #endif
 
-int _test_main() {
+int _test_main(int argc, char *argv[])
+{
     const char *str = "Hello, World!";
     uint32_t seed = 42; // Seed value
 
@@ -415,5 +424,4 @@ int _test_main() {
 
     return 0;
 }
-
 
