@@ -49,6 +49,12 @@ typedef char                    tchar_t;
 typedef struct _kvdb_t      kvdb_t;
 typedef enum _cdb_type_e    cdb_type_e;
 
+/* Key/data structure -- a Data-Base Thang. */
+typedef struct {
+	void	*data;			/* data */
+	size_t	 size;			/* data length */
+} kvdbt_t;
+
 enum _cdb_type_e {
     _cdb_none_ = 0,
     _cdb_bdb_, // Berkeley DB
@@ -71,9 +77,9 @@ struct _kvdb_t {
     int (*open)(kvdb_t *db, const tchar_t *db_name, int oflags);
     int (*remove)(const tchar_t *db_name);
     int (*close)(kvdb_t *db);
-    int (*get)(kvdb_t *db, const char *key, void *data, int size);
-    int (*put)(kvdb_t *db, const char *key, const void *data, int size);
-    int (*del)(kvdb_t *db, const char *key);
+    int (*get)(kvdb_t *db, const kvdbt_t *key, kvdbt_t *data);
+    int (*put)(kvdb_t *db, const kvdbt_t *key, const kvdbt_t *data);
+    int (*del)(kvdb_t *db, const kvdbt_t *key);
 
     cdb_type_e db_type;
 };

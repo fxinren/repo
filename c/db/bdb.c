@@ -99,24 +99,26 @@ static int _bdb_close(kvdb_t *db)
     return 0;
 }
 
-static int _bdb_get(kvdb_t *db, const char *key, void *data, int size)
+static int _bdb_get(kvdb_t *db, const kvdbt_t *key, kvdbt_t *data)
 {
     int ret = 0;
     DB *dbp = (DB*)(db->db_mdl);
-    DBT bdb_key, bdb_data;
+    DBT bdb_key;
+    DBT bdb_data;
 
     memset(&bdb_key, 0, sizeof(DBT));
     memset(&bdb_data, 0, sizeof(DBT));
 
-    bdb_key.data = (void*)key;
-    bdb_key.size = strlen(key) + 1;
+    bdb_key.data = (void*)key->data;
+    bdb_key.size = key->size;
+
+    bdb_data.data = (void*)data->data;
+    bdb_data.size = data->size;
 
     ret = dbp->get(dbp, NULL, &bdb_key, &bdb_data, 0);
     if (ret == 0) {
         printf("Found key '%s': value='%s', size=%d\n", 
               (char *)bdb_key.data, (char *)bdb_data.data, bdb_data.size);
-        data = bdb_data.data;
-        ret = bdb_data.size;
     } else if (ret == DB_NOTFOUND) {
         printf("Key '%s' not found in database\n", (char *)bdb_key.data);
     } else {
@@ -126,20 +128,21 @@ static int _bdb_get(kvdb_t *db, const char *key, void *data, int size)
     return ret;
 }
 
-static int _bdb_put(kvdb_t *db, const char *key, const void *data, int size)
+static int _bdb_put(kvdb_t *db, const kvdbt_t *key, const kvdbt_t *data)
 {
     int ret = 0;
     DB *dbp = (DB*)(db->db_mdl);
-    DBT bdb_key, bdb_data;
+    DBT bdb_key;
+    DBT bdb_data;
 
     memset(&bdb_key, 0, sizeof(DBT));
     memset(&bdb_data, 0, sizeof(DBT));
 
-    bdb_key.data = (void*)key;
-    bdb_key.size = strlen(key) + 1;
-    
-    bdb_data.data = (void*)data;
-    bdb_data.size = size;
+    bdb_key.data = (void*)key->data;
+    bdb_key.size = key->size;
+
+    bdb_data.data = (void*)data->data;
+    bdb_data.size = data->size;
 
     ret = dbp->put(dbp, NULL, &bdb_key, &bdb_data, 0);
     if (ret != 0) {
@@ -149,9 +152,24 @@ static int _bdb_put(kvdb_t *db, const char *key, const void *data, int size)
     return ret;
 }
 
-static int _bdb_del(kvdb_t *db, const char *key)
+static int _bdb_del(kvdb_t *db, const kvdbt_t *key)
 {
     int ret = 0;
+    DB *dbp = (DB*)(db->db_mdl);
+    DBT bdb_key;
+    DBT bdb_data;
+
+    memset(&bdb_key, 0, sizeof(DBT));
+    memset(&bdb_data, 0, sizeof(DBT));
+
+    bdb_key.data = (void*)key->data;
+    bdb_key.size = key->size;
+
+    ret = dbp->del(dbp, NULL, &bdb_key, 0);
+    if (ret != 0 && ret != DB_NOTFOUND) {
+        handle_error(dbp, ret, "db->del failed");
+    }
+
     return ret;
 }
 

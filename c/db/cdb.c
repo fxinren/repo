@@ -53,15 +53,31 @@ int main(int argc, char *arg[])
 {
     int ret = 0;
     kvdb_t kvdb;
+    kvdbt_t key;
+    kvdbt_t data;
     char v[128] = {0};
 
     init_kvdb(&kvdb, _cdb_bdb_);
 
+    memset(&key, 0, sizeof(kvdbt_t));
+    memset(&data, 0, sizeof(kvdbt_t));
+    key.data = "test-key1";
+    key.size = strlen("test-key1") + 1;
+
     ret = kvdb.open(&kvdb, _test_bdb_name_, _CDBO_CREATE_);
 
-    kvdb.put(&kvdb, "test-key1", "test-value1", strlen("test-value1") + 1);
+    data.data = "test-value1";
+    data.size = strlen("test-value1") + 1;
+    kvdb.put(&kvdb, &key, &data);
 
-    kvdb.get(&kvdb, "test-key1", v, 128);
+    memset(&data, 0, sizeof(kvdbt_t));
+    data.data = v;
+    data.size = 128;
+    kvdb.get(&kvdb, &key, &data); // after put, try get
+
+    kvdb.del(&kvdb, &key);
+
+    kvdb.get(&kvdb, &key, &data); // after del, try get
 
     kvdb.close(&kvdb);
 
