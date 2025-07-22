@@ -46,6 +46,7 @@ typedef char                    tchar_t;
 *        Data Types 
 *********************************************************************/
 
+typedef struct _kvdbe_t     kvdbe_t;
 typedef struct _kvdb_t      kvdb_t;
 typedef enum _cdb_type_e    cdb_type_e;
 
@@ -67,28 +68,50 @@ enum _cdb_type_e {
     _cdb_type_count_
 };
 
+// DB engine open flags
+#define _CDBEO_CREATE_          0x0001
+#define _CDBEO_TRANSICTION_     0x0002
+
+// DB open flags
 #define _CDBO_CREATE_           0x0001
 #define _CDBO_EXCL_             0x0002
 #define _CDBO_RDONLY_           0x0004
 #define _CDBO_TRUNCATE_         0x0008
 
+
+struct _kvdbe_t {
+    void        *engine;
+    const char  *path;
+    // engine
+    int (*create)(kvdbe_t *dbe, const char *dir, int oflags);
+    int (*destroy)(kvdbe_t *dbe);
+    int (*remove)(kvdbe_t *dbe);
+    // db
+    int (*opendb)(kvdbe_t *dbe, kvdb_t *db, const char *db_name, int oflags);
+    int (*removedb)(kvdbe_t *dbe, const char *db_name);
+    int (*closedb)(kvdbe_t *dbe, kvdb_t *db);
+
+    cdb_type_e  db_type;
+};
+
 struct _kvdb_t {
-    void *db_mdl;
-    int (*open)(kvdb_t *db, const tchar_t *db_name, int oflags);
-    int (*remove)(const tchar_t *db_name);
-    int (*close)(kvdb_t *db);
-    int (*get)(kvdb_t *db, const kvdbt_t *key, kvdbt_t *data);
-    int (*put)(kvdb_t *db, const kvdbt_t *key, const kvdbt_t *data);
+    kvdbe_t     *dbe;
+    void        *mdl;
+    const char  *name;
+
+    int (*get)(kvdb_t *db, const kvdbt_t *key, kvdbt_t *value);
+    int (*put)(kvdb_t *db, const kvdbt_t *key, const kvdbt_t *value);
     int (*del)(kvdb_t *db, const kvdbt_t *key);
 
-    cdb_type_e db_type;
+    int (*reset_cursor)(kvdb_t *db);
+    int (*traverse)(kvdb_t *db, kvdbt_t *key, kvdbt_t *value);
 };
 
 /********************************************************************
 *        Functions
 *********************************************************************/
 
-int init_kvdb(kvdb_t *kvdb, cdb_type_e db_type);
+int init_kvdbe(kvdbe_t *kvdbe, cdb_type_e db_type);
 
 #if defined(__cplusplus)
 }
